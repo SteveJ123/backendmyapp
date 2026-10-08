@@ -37,7 +37,7 @@ app.post('/api/verify-payment', async (req, res) => {
   if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
     return res.status(400).json({ success: false, message: 'Missing payment parameters.' });
   }
-
+  
   // Generate expected HMAC SHA256 signature
   const body = razorpay_order_id + '|' + razorpay_payment_id;
   const expectedSignature = crypto
