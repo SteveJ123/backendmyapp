@@ -30,6 +30,45 @@ const razorpay = new Razorpay({
 
 const crypto = require('crypto');
 
+// 1. Allowed Origins List
+const allowedOrigins = [
+  "https://www.younghappyandhealthy.com",
+  "https://younghappyandhealthy.com", // Include both with and without 'www'
+  "http://localhost:3000", // For local development
+  "http://localhost:5173", // Vite local port (if using Vite)
+  "http://localhost:4200", // Angular local port
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like Postman, Curl, or mobile apps)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        console.error("CORS blocked origin:", origin);
+        // Pass false instead of an Error object to prevent 500 crashes
+        return callback(null, false);
+      }
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "x-language",
+      "X-Language",
+      "Accept",
+      "*",
+    ],
+    AllowedOrigins: ["*"],
+    ExposeHeaders: [],
+    credentials: true,
+    optionsSuccessStatus: 200, // Fixes issues with legacy browsers/proxies
+  }),
+);
+
 app.post('/api/verify-payment', async (req, res) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
@@ -164,6 +203,39 @@ await db.execute(
     return res.status(500).json({ 
       success: false, 
       message: "Server error during registration. Please try again." 
+    });
+  }
+});
+
+// GET Route: Fetch all users from the users table
+app.get('/api/users', async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT 
+        id, 
+        fullName, 
+        email, 
+        whatsappNumber, 
+        challenges, 
+        created_at, 
+        razorpay_order_id, 
+        razorpay_payment_id, 
+        payment_status 
+      FROM users 
+      ORDER BY id DESC
+    `);
+
+    return res.status(200).json({
+      success: true,
+      count: rows.length,
+      data: rows
+    });
+  } catch (error) {
+    console.error('Database Query Error:', error.message);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch users from database',
+      error: error.message
     });
   }
 });
