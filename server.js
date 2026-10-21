@@ -220,7 +220,8 @@ app.get('/api/users', async (req, res) => {
         created_at, 
         razorpay_order_id, 
         razorpay_payment_id, 
-        payment_status 
+        payment_status,
+        whatsapp_joined 
       FROM users 
       ORDER BY id DESC
     `);
@@ -237,6 +238,32 @@ app.get('/api/users', async (req, res) => {
       message: 'Failed to fetch users from database',
       error: error.message
     });
+  }
+});
+
+app.post("/api/whatsapp-joined", async (req, res) => {
+  const { email, whatsapp_joined } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ success: false, message: "Email is required." });
+  }
+
+  try {
+    // If 'whatsapp_joined' is passed from frontend, use it. Otherwise, default to TRUE.
+    const statusValue = whatsapp_joined !== undefined ? whatsapp_joined : true;
+
+    const query = `UPDATE users SET whatsapp_joined = ? WHERE email = ?`;
+    const [result] = await db.execute(query, [statusValue, email]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+
+    return res.json({ success: true, message: "WhatsApp join status updated successfully." });
+
+  } catch (error) {
+    console.error("WhatsApp Status Update Error:", error);
+    return res.status(500).json({ success: false, message: "Server error." });
   }
 });
 
