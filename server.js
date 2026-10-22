@@ -138,6 +138,75 @@ app.post('/api/verify-payment', async (req, res) => {
 // });
 
 // Registration API Endpoint: Registers user & generates Razorpay Order
+// app.post("/api/register", async (req, res) => {
+//   const { fullName, email, whatsappNumber, challenges } = req.body;
+
+  // 1. Validate required fields
+  // if (!fullName || !email || !whatsappNumber) {
+  //   return res.status(400).json({ 
+  //     success: false, 
+  //     message: "Please fill all required fields." 
+  //   });
+  // }
+
+  // try {
+    // 2. Insert user details into MySQL database
+    // const query = `
+    //   INSERT INTO users (fullName, email, whatsappNumber, challenges) 
+    //   VALUES (?, ?, ?, ?)
+    // `;
+    // await db.execute(query, [fullName, email, whatsappNumber, challenges || ""]);
+
+    // 3. Define Razorpay order options (₹99 = 9900 paise)
+    // const options = {
+    //   amount: 9900, 
+    //   currency: "INR",
+    //   receipt: `receipt_${Date.now()}`,
+    //   notes: {
+    //     fullName,
+    //     email,
+    //     whatsappNumber
+    //   }
+    // };
+
+    // 4. Generate order ID via Razorpay SDK
+    // const order = await razorpay.orders.create(options);
+
+    // Store razorpay_order_id alongside the registered user
+// await db.execute(
+//   'UPDATE users SET razorpay_order_id = ? WHERE email = ?', 
+//   [order.id, email]
+// );
+
+    // 5. Send order details and public key back to frontend
+    // return res.status(201).json({
+    //   success: true,
+    //   message: "Registration successful! Proceed to payment.",
+    //   key_id: process.env.RAZORPAY_KEY_ID,
+    //   amount: order.amount,
+    //   currency: order.currency,
+    //   name: "Two days Bhagavadh Gita",
+    //   description: "Registration Fee",
+    //   order_id: order.id
+    // });
+
+  // } catch (error) {
+    // Handle duplicate registration emails gracefully
+//     if (error.code === "ER_DUP_ENTRY") {
+//       return res.status(409).json({ 
+//         success: false, 
+//         message: "This email is already registered." 
+//       });
+//     }
+
+//     console.error("Registration & Order Creation Error:", error);
+//     return res.status(500).json({ 
+//       success: false, 
+//       message: "Server error during registration. Please try again." 
+//     });
+//   }
+// });
+
 app.post("/api/register", async (req, res) => {
   const { fullName, email, whatsappNumber, challenges } = req.body;
 
@@ -150,7 +219,7 @@ app.post("/api/register", async (req, res) => {
   }
 
   try {
-    // 2. Insert user details into MySQL database
+    // 2. Insert user details as a new row every time (even if email exists)
     const query = `
       INSERT INTO users (fullName, email, whatsappNumber, challenges) 
       VALUES (?, ?, ?, ?)
@@ -172,11 +241,11 @@ app.post("/api/register", async (req, res) => {
     // 4. Generate order ID via Razorpay SDK
     const order = await razorpay.orders.create(options);
 
-    // Store razorpay_order_id alongside the registered user
-await db.execute(
-  'UPDATE users SET razorpay_order_id = ? WHERE email = ?', 
-  [order.id, email]
-);
+    // Store razorpay_order_id for the user
+    await db.execute(
+      'UPDATE users SET razorpay_order_id = ? WHERE email = ? ORDER BY id DESC LIMIT 1', 
+      [order.id, email]
+    );
 
     // 5. Send order details and public key back to frontend
     return res.status(201).json({
@@ -191,14 +260,6 @@ await db.execute(
     });
 
   } catch (error) {
-    // Handle duplicate registration emails gracefully
-    if (error.code === "ER_DUP_ENTRY") {
-      return res.status(409).json({ 
-        success: false, 
-        message: "This email is already registered." 
-      });
-    }
-
     console.error("Registration & Order Creation Error:", error);
     return res.status(500).json({ 
       success: false, 
