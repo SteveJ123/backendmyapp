@@ -208,7 +208,7 @@ app.post('/api/verify-payment', async (req, res) => {
 // });
 
 app.post("/api/register", async (req, res) => {
-  const { fullName, email, whatsappNumber, challenges } = req.body;
+  const { fullName, email, whatsappNumber, challenges, language } = req.body;
 
   // 1. Validate required fields
   if (!fullName || !email || !whatsappNumber) {
@@ -221,10 +221,10 @@ app.post("/api/register", async (req, res) => {
   try {
     // 2. Insert user details as a new row every time (even if email exists)
     const query = `
-      INSERT INTO users (fullName, email, whatsappNumber, challenges) 
-      VALUES (?, ?, ?, ?)
+      INSERT INTO users (fullName, email, whatsappNumber, challenges, language) 
+      VALUES (?, ?, ?, ?, ?)
     `;
-    await db.execute(query, [fullName, email, whatsappNumber, challenges || ""]);
+    await db.execute(query, [fullName, email, whatsappNumber, challenges, language || ""]);
 
     // 3. Define Razorpay order options (₹99 = 9900 paise)
     const options = {
@@ -234,7 +234,8 @@ app.post("/api/register", async (req, res) => {
       notes: {
         fullName,
         email,
-        whatsappNumber
+        whatsappNumber,
+        language
       }
     };
 
@@ -282,7 +283,8 @@ app.get('/api/users', async (req, res) => {
         razorpay_order_id, 
         razorpay_payment_id, 
         payment_status,
-        whatsapp_joined 
+        whatsapp_joined,
+        language, 
       FROM users 
       ORDER BY id DESC
     `);
