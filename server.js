@@ -284,7 +284,7 @@ app.get('/api/users', async (req, res) => {
         razorpay_payment_id, 
         payment_status,
         whatsapp_joined,
-        language, 
+        language 
       FROM users 
       ORDER BY id DESC
     `);
