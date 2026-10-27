@@ -228,7 +228,7 @@ app.post("/api/register", async (req, res) => {
 
     // 3. Define Razorpay order options (₹99 = 9900 paise)
     const options = {
-      amount: 9900, 
+      amount: 20000, 
       currency: "INR",
       receipt: `receipt_${Date.now()}`,
       notes: {
