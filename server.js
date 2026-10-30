@@ -208,7 +208,7 @@ app.post('/api/verify-payment', async (req, res) => {
 // });
 
 app.post("/api/register", async (req, res) => {
-  const { fullName, email, whatsappNumber, challenges, language } = req.body;
+  const { fullName, email, whatsappNumber, challenges, language, amount, coursename } = req.body;
 
   // 1. Validate required fields
   if (!fullName || !email || !whatsappNumber) {
@@ -221,21 +221,22 @@ app.post("/api/register", async (req, res) => {
   try {
     // 2. Insert user details as a new row every time (even if email exists)
     const query = `
-      INSERT INTO users (fullName, email, whatsappNumber, challenges, language) 
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO users (fullName, email, whatsappNumber, challenges, language, amount, coursename) 
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
-    await db.execute(query, [fullName, email, whatsappNumber, challenges, language || ""]);
+    await db.execute(query, [fullName, email, whatsappNumber, challenges, language, amount, coursename || ""]);
 
     // 3. Define Razorpay order options (₹99 = 9900 paise)
     const options = {
-      amount: 20000, 
+      amount: amount, 
       currency: "INR",
       receipt: `receipt_${Date.now()}`,
       notes: {
         fullName,
         email,
         whatsappNumber,
-        language
+        language,
+        coursename
       }
     };
 
@@ -255,7 +256,7 @@ app.post("/api/register", async (req, res) => {
       key_id: process.env.RAZORPAY_KEY_ID,
       amount: order.amount,
       currency: order.currency,
-      name: "Two days Bhagavadh Gita",
+      coursename: coursename,
       description: "Registration Fee",
       order_id: order.id
     });
